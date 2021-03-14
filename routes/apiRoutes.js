@@ -2,7 +2,13 @@ let db = require('../models');
 
 module.exports = function(app){
     app.get('/api/workouts', function(req, res){
-        db.Regimen.find({})
+        db.Regimen.aggregate([{
+            $addFields:{
+                totalDuration:{
+                    $sum:"$exercises.duration"
+                }
+            }
+        }])
         .then(function(results){
             res.json(results);
         })
@@ -11,7 +17,7 @@ module.exports = function(app){
         })
     });
     app.put('/api/workouts/:id', function(req, res){
-        db.Regimen.updateOne({id: req.params.id}, { $push: {exercises: req.body}})
+        db.Regimen.findByIdAndUpdate( req.params.id, { $push: {exercises: req.body}})
         .then(function(results){
             res.json(results);
         })
@@ -20,8 +26,8 @@ module.exports = function(app){
         })
     });
     app.post('/api/workouts', function(req, res){
-        db.Regimen.create(req.body)
-        .then(function(req, res){
+        db.Regimen.create({})
+        .then(results=>{
             res.json(results);
         })
         .catch(function (err){
@@ -29,12 +35,19 @@ module.exports = function(app){
         })
     });
     app.get('/api/workouts/range', function(req, res){
-        db.Regimen.find({})
-        .then(function(req, res){
+        db.Regimen.aggregate([{
+            $addFields:{
+                totalDuration:{
+                    $sum:"$exercises.duration"
+                }
+            }
+        }]).sort({_id:-1}).limit(7)
+        .then(function(results){
             res.json(results);
         })
-        .catch (function(err){
-            res.json(err)
+        .catch(function(err){
+            res.json(err);
         })
-    });
+    })
+         
 }
